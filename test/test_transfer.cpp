@@ -5,13 +5,13 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <unistd.h>
 using namespace std;
 
 int main(){
 	
 	string destinyDir = "DestinyTest";
 	FileTransfer ft;
-	DIR *destiny;
 	struct dirent *fileTransfered;
 	
 	if(mkdir("Test",0777) == -1){
@@ -38,27 +38,34 @@ int main(){
 	
 	ft.transferFile("test");
 	
-	if((destiny = opendir(destinyDir.c_str())) == NULL){
-		cerr << "Reading a directory was not possible"<<endl
-		<<"Run this test with a user with permissions to read a directory here"<<endl;
-		return errno;
-	}
 	
-	fileTransfered = readdir(destiny);
-	if(fileTransfered->d_name != "test"){
-		cout<< "Name of file tranfered don't match original"<<endl;
+	ifstream file(destinyDir+"/test");
+        
+        if(file.fail()){
+		cout<< "Name of file moved don't match the original"<<endl;
 		return 1;
+            
+        }
+	for(int i =0; i < 4; i++){
+		if(testFiles[i]!="Test/test"){
+			remove(testFiles[i].c_str());
+		}
 	}
-	
-	ifstream file(destinyDir+"/"+fileTransfered->d_name);
+	rmdir("Test");
 	string recoveredContent;
 	if(getline(file,recoveredContent)){
-		if(recoveredContent == "test content test"){
+		if(recoveredContent == "test content Test/test"){
+			file.close();
+			remove((destinyDir+"/test").c_str());
+			rmdir(destinyDir.c_str());
 			cout<<"File transfer worked correctly"<<endl;
 			return 0;
 		}
 	}
-		cout<<"Content of file tranfered don't match original"<<endl;
-		return 1;
+	file.close();
+	remove((destinyDir+"/test").c_str());
+	rmdir(destinyDir.c_str());
+	cout<<"Content of file tranfered don't match original"<<endl;
+	return 1;
 
 }
